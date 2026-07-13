@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirSense Dashboard</title>
+
+    <style>
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body{
+            background:#f4f7fc;
+        }
+
+        /* Header */
+
+        header{
+            background:#007BFF;
+            color:white;
+            padding:20px;
+            text-align:center;
+        }
+
+        header h1{
+            margin-bottom:10px;
+        }
+
+        /* Prediction Button */
+
+        .predict-btn{
+            position:fixed;
+            top:20px;
+            right:20px;
+            background:#28a745;
+            color:white;
+            border:none;
+            padding:15px 25px;
+            border-radius:10px;
+            font-size:16px;
+            cursor:pointer;
+        }
+
+        .predict-btn:hover{
+            background:#218838;
+        }
+
+        /* Dashboard Cards */
+
+        .card-container{
+            display:grid;
+            grid-template-columns: repeat(auto-fit,minmax(250px,1fr));
+            gap:20px;
+            padding:30px;
+        }
+
+        .card{
+            background:white;
+            padding:25px;
+            border-radius:15px;
+            box-shadow:0 4px 10px rgba(0,0,0,0.1);
+            text-align:center;
+        }
+
+        .card h2{
+            color:#555;
+            margin-bottom:10px;
+        }
+
+        .card p{
+            font-size:28px;
+            color:#007BFF;
+            font-weight:bold;
+        }
+
+        /* Graph Section */
+
+        .graph-section{
+            padding:30px;
+        }
+
+        .graph-box{
+            background:white;
+            margin-bottom:30px;
+            padding:20px;
+            border-radius:15px;
+            box-shadow:0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .graph-box h2{
+            margin-bottom:15px;
+        }
+
+        .graph-box img{
+            width:100%;
+            border-radius:10px;
+        }
+
+        /* Modal */
+
+        .modal{
+            display:none;
+            position:fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background:rgba(0,0,0,0.6);
+            justify-content:center;
+            align-items:center;
+        }
+
+        .modal-content{
+            background:white;
+            width:450px;
+            max-height:90vh;
+            overflow-y:auto;
+            padding:30px;
+            border-radius:15px;
+            position:relative;
+        }
+
+        .close{
+            position:absolute;
+            right:20px;
+            top:15px;
+            font-size:28px;
+            cursor:pointer;
+        }
+
+        .input-group{
+            margin-bottom:15px;
+        }
+
+        .input-group label{
+            display:block;
+            margin-bottom:5px;
+            font-weight:bold;
+        }
+
+        .input-group input{
+            width:100%;
+            padding:10px;
+            border:1px solid #ccc;
+            border-radius:8px;
+        }
+
+        .submit-btn{
+            width:100%;
+            padding:12px;
+            background:#007BFF;
+            color:white;
+            border:none;
+            border-radius:8px;
+            font-size:16px;
+            cursor:pointer;
+        }
+
+        .result-box{
+            margin-top:20px;
+            padding:20px;
+            border-radius:10px;
+            background:#f0f8ff;
+            text-align:center;
+            border:2px solid #007BFF;
+        }
+
+        .result-box h2{
+            color:#007BFF;
+            margin:10px 0;
+        }
+
+        .result-box h3{
+            color:#28a745;
+            margin-bottom:10px;
+        }
+
+        .result-box p{
+            color:#555;
+            line-height:1.5;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🌍 AirSense Pollution Prediction Platform</h1>
+        <p>Environmental Monitoring Dashboard</p>
+    </header>
+
+    <!-- Prediction Button -->
+
+    <button class="predict-btn" onclick="openModal()">
+        Predict AQI
+    </button>
+
+    <!-- Statistics Cards -->
+
+    <div class="card-container">
+
+        <div class="card">
+            <h2>Average AQI</h2>
+            <p>{{ avg_aqi }}</p>
+        </div>
+
+        <div class="card">
+            <h2>Maximum AQI</h2>
+            <p>{{ max_aqi }}</p>
+        </div>
+
+        <div class="card">
+            <h2>Minimum AQI</h2>
+            <p>{{ min_aqi }}</p>
+        </div>
+
+        <div class="card">
+            <h2>Most Polluted City</h2>
+            <p>{{ most_polluted }}</p>
+        </div>
+
+        <div class="card">
+            <h2>Least Polluted City</h2>
+            <p>{{ least_polluted }}</p>
+        </div>
+
+    </div>
+
+    <!-- Graph Section -->
+
+    <div class="graph-section">
+
+        <div class="graph-box">
+            <h2>AQI Trend Analysis</h2>
+
+            <img src="{{ url_for('static',
+             filename='aqi_trend.png') }}">
+        </div>
+
+        <div class="graph-box">
+            <h2>City Comparison</h2>
+
+            <img src="{{ url_for('static',
+             filename='city_comparison.png') }}">
+        </div>
+
+        <div class="graph-box">
+            <h2>Future Pollution Prediction</h2>
+
+            <img src="{{ url_for('static',
+             filename='future_prediction.png') }}">
+        </div>
+
+    </div>
+
+    <!-- Modal -->
+
+    <div class="modal" id="predictionModal">
+
+        <div class="modal-content">
+
+            <span class="close"
+             onclick="closeModal()">&times;</span>
+
+            <h2>Enter Air Parameters</h2>
+
+            <form action="/predict" method="POST">
+
+                <div class="input-group">
+                <label>PM2.5 (0 - 300 µg/m³)</label>
+                <input type="number"
+                    step="0.01"
+                    name="pm25"
+                    min="0"
+                    max="300"
+                    placeholder="Enter value between 0 and 300"
+                    required>
+                </div>
+
+                <div class="input-group">
+                    <label>PM10 (0 - 500 µg/m³)</label>
+                    <input type="number"
+                        step="0.01"
+                        name="pm10"
+                        min="0"
+                        max="500"
+                        placeholder="Enter value between 0 and 500"
+                        required>
+                </div>
+
+                <div class="input-group">
+                    <label>Ozone (0 - 800 µg/m³)</label>
+                    <input type="number"
+                        step="0.01"
+                        name="ozone"
+                        min="0"
+                        max="800"
+                        placeholder="Enter value between 0 and 800"
+                        required>
+                </div>
+
+                <div class="input-group">
+                    <label>NO₂ (0 - 500 µg/m³)</label>
+                    <input type="number"
+                        step="0.01"
+                        name="no2"
+                        min="0"
+                        max="500"
+                        placeholder="Enter value between 0 and 500"
+                        required>
+                </div>
+
+                <div class="input-group">
+                    <label>CO (0 - 500 mg/m³)</label>
+                    <input type="number"
+                        step="0.01"
+                        name="co"
+                        min="0"
+                        max="500"
+                        placeholder="Enter value between 0 and 500"
+                        required>
+                </div>
+
+                <div class="input-group">
+                    <label>SO₂ (0 - 2000 µg/m³)</label>
+                    <input type="number"
+                        step="0.01"
+                        name="so2"
+                        min="0"
+                        max="2000"
+                        placeholder="Enter value between 0 and 2000"
+                        required>
+                </div>
+
+                <div class="input-group">
+                    <label>Temperature (°C)</label>
+                    <input type="number"
+                        step="0.01"
+                        name="temperature"
+                        placeholder="Enter temperature"
+                        required>
+                </div>
+
+                <div class="input-group">
+                    <label>Humidity (%)</label>
+                    <input type="number"
+                        step="0.01"
+                        name="humidity"
+                        min="0"
+                        max="100"
+                        placeholder="Enter humidity (0-100)"
+                        required>
+                </div>
+
+                <button class="submit-btn" type="submit">
+                    Predict AQI
+                </button>
+
+                {% if prediction %}
+
+                <div class="result-box">
+
+                    <h3>Prediction Result</h3>
+
+                    <h2>AQI: {{ prediction }}</h2>
+
+                    <h3>{{ category }}</h3>
+
+                    <p>{{ message }}</p>
+
+                </div>
+
+                {% endif %}
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        function openModal(){
+            document.getElementById(
+            "predictionModal").style.display="flex";
+        }
+
+        function closeModal(){
+            document.getElementById(
+            "predictionModal").style.display="none";
+        }
+
+        window.onclick=function(event){
+
+            let modal=document.getElementById(
+            "predictionModal");
+
+            if(event.target==modal){
+                closeModal();
+            }
+        }
+
+        window.onload = function() {
+
+            let prediction = "{{ prediction }}";
+
+            if (prediction !== "") {
+                openModal();
+            }
+        }
+    
+
+    </script>
+
+</body>
+</html>
